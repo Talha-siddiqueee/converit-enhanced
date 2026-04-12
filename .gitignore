@@ -1,0 +1,24 @@
+# Local Netlify folder
+.netlify
+
+# Environment variables (contains secrets - NEVER commit this!)
+.env
+.env.local
+.env.*.local
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# TanStack generated files
+.tanstack/
+
+# Editor
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

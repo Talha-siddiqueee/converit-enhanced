@@ -11,7 +11,7 @@ export const Route = createFileRoute('/api/ai-gemini')({
             return Response.json({ error: 'Missing or invalid prompt' }, { status: 400 })
           }
 
-          const apiKey = process.env.GEMINI_API_KEY
+          const apiKey = process.env.GEMINI_API_KEY || (import.meta as any).env?.VITE_GEMINI_API_KEY
           if (!apiKey) {
             return Response.json({ error: 'Gemini API key not configured' }, { status: 500 })
           }

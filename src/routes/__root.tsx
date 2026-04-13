@@ -122,7 +122,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           }}
         />
       </head>
-      <body style={{ background: '#080808' }} className="min-h-screen flex flex-col text-white">
+      <body className="min-h-screen flex flex-col bg-[var(--bg)] text-[var(--text-1)] transition-colors duration-300">
         {children}
         <Scripts />
       </body>

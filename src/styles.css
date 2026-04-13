@@ -7,18 +7,36 @@
 
 /* ── Design tokens ───────────────────────────────────── */
 :root {
+  /* Light Mode (Default) */
+  --bg:          #fafafa;
+  --bg-surface:  #ffffff;
+  --bg-card:     #ffffff;
+  --border:      rgba(0,0,0,0.08);
+  --border-hover:rgba(0,0,0,0.14);
+  --accent:      #7c3aed;
+  --accent-dim:  rgba(124,58,237,0.08);
+  --accent-glow: rgba(124,58,237,0.25);
+  --text-1:      #111827;
+  --text-2:      #4b5563;
+  --text-3:      #9ca3af;
+  --mono:        'JetBrains Mono', 'Courier New', monospace;
+  --grid-line:   rgba(0,0,0,0.04);
+}
+
+.dark {
+  /* Dark Mode Overrides */
   --bg:          #080808;
   --bg-surface:  #0f0f0f;
   --bg-card:     #111111;
   --border:      rgba(255,255,255,0.07);
   --border-hover:rgba(255,255,255,0.16);
-  --accent:      #7c3aed;
-  --accent-dim:  rgba(124,58,237,0.12);
-  --accent-glow: rgba(124,58,237,0.35);
+  --accent:      #a78bfa;
+  --accent-dim:  rgba(124,58,237,0.15);
+  --accent-glow: rgba(167,139,250,0.4);
   --text-1:      #f0f0f0;
-  --text-2:      #888888;
-  --text-3:      #444444;
-  --mono:        'JetBrains Mono', 'Courier New', monospace;
+  --text-2:      #a1a1aa;
+  --text-3:      #52525b;
+  --grid-line:   rgba(255,255,255,0.03);
 }
 
 /* ── Base ─────────────────────────────────────────────── */
@@ -160,7 +178,7 @@ body::before {
   border-color: var(--border);
 }
 
-/* ── Premium dark card ───────────────────────────────── */
+/* ── Premium surface card ────────────────────────────── */
 .card-dark {
   background: var(--bg-card);
   border: 1px solid var(--border);
@@ -170,10 +188,15 @@ body::before {
 }
 .card-dark:hover {
   border-color: var(--border-hover);
+  box-shadow: 0 0 0 1px var(--accent-glow),
+              0 20px 60px rgba(0,0,0,0.1),
+              0 0 40px var(--accent-dim);
+  transform: translateY(-3px);
+}
+.dark .card-dark:hover {
   box-shadow: 0 0 0 1px rgba(124,58,237,0.2),
               0 20px 60px rgba(0,0,0,0.6),
               0 0 40px rgba(124,58,237,0.08);
-  transform: translateY(-3px);
 }
 
 /* ── Gradient border card (active/featured) ─────────── */
@@ -212,20 +235,23 @@ body::before {
   animation: glowPulse 2s ease-in-out infinite;
 }
 
-/* ── Header glassmorphism (dark) ─────────────────────── */
+/* ── Header glassmorphism ────────────────────────────── */
 .header-dark {
-  background: rgba(8,8,8,0.85);
+  background: color-mix(in srgb, var(--bg), transparent 15%);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border-bottom: 1px solid var(--border);
 }
 
-/* ── Dropdown (dark) ─────────────────────────────────── */
+/* ── Dropdown ────────────────────────────────────────── */
 .dropdown-dark {
-  background: #111111;
+  background: var(--bg-card);
   border: 1px solid var(--border);
-  box-shadow: 0 24px 48px rgba(0,0,0,0.7), 0 0 0 1px rgba(124,58,237,0.1);
+  box-shadow: 0 24px 48px rgba(0,0,0,0.15), 0 0 0 1px var(--accent-dim);
   animation: slideDown 0.2s cubic-bezier(0.16,1,0.3,1) both;
+}
+.dark .dropdown-dark {
+  box-shadow: 0 24px 48px rgba(0,0,0,0.7), 0 0 0 1px rgba(124,58,237,0.1);
 }
 
 /* ── Tool banner (dark) ──────────────────────────────── */
@@ -317,7 +343,7 @@ body::before {
 /* ── Grid lines background ───────────────────────────── */
 .bg-grid {
   background-image:
-    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
   background-size: 60px 60px;
 }

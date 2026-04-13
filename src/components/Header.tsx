@@ -62,10 +62,8 @@ export default function Header({
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    // Always start dark
-    document.documentElement.classList.add('dark')
-    localStorage.setItem('theme', 'dark')
-    setIsDark(true)
+    // Sync React state with the actual class on <html> (set by root script)
+    setIsDark(document.documentElement.classList.contains('dark'))
   }, [])
 
   useEffect(() => {
@@ -99,11 +97,11 @@ export default function Header({
         {/* Logo */}
         <a href="/" className="flex items-center gap-2.5 flex-shrink-0 group">
           <ConvertItLogo />
-          <span className="text-base font-black tracking-tight text-white">
+          <span className="text-base font-black tracking-tight text-[var(--text-1)]">
             ConvertIt
           </span>
           <span className="label-mono px-1.5 py-0.5 rounded text-[10px]"
-            style={{ background: 'var(--accent-dim)', color: '#a78bfa', border: '1px solid rgba(124,58,237,0.2)' }}>
+            style={{ background: 'var(--accent-dim)', color: 'var(--accent)', border: '1px solid var(--border)' }}>
             BETA
           </span>
         </a>
@@ -116,8 +114,8 @@ export default function Header({
                 onClick={() => setOpenGroup(prev => prev === group.group ? null : group.group)}
                 className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                   openGroup === group.group
-                    ? 'text-white bg-white/6'
-                    : 'text-white/50 hover:text-white hover:bg-white/5'
+                    ? 'text-[var(--text-1)] bg-[var(--accent-dim)]'
+                    : 'text-[var(--text-2)] hover:text-[var(--text-1)] hover:bg-[var(--accent-dim)]'
                 }`}
               >
                 {group.group}
@@ -135,19 +133,19 @@ export default function Header({
                       <button
                         key={item.label}
                         onClick={() => handleNavItem(item.href)}
-                        className="w-full flex items-start gap-2.5 px-3 py-2.5 rounded-lg transition-all group text-left hover:bg-white/5"
+                        className="w-full flex items-start gap-2.5 px-3 py-2.5 rounded-lg transition-all group text-left hover:bg-[var(--accent-dim)]"
                       >
                         <span className="mt-0.5 text-white/30 group-hover:text-violet-400 transition-colors flex-shrink-0">
                           {item.icon}
                         </span>
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="text-sm font-semibold text-white/70 group-hover:text-white transition-colors">
+                            <span className="text-sm font-semibold text-[var(--text-1)] opacity-70 group-hover:text-[var(--text-1)] transition-colors">
                               {item.label}
                             </span>
                             {item.badge && (
                               <span className="label-mono px-1.5 py-0.5 rounded text-[9px]"
-                                style={{ background: 'var(--accent-dim)', color: '#a78bfa', border: '1px solid rgba(124,58,237,0.2)' }}>
+                                style={{ background: 'var(--accent-dim)', color: 'var(--accent)', border: '1px solid var(--border)' }}>
                                 {item.badge}
                               </span>
                             )}
@@ -172,18 +170,18 @@ export default function Header({
 
           <button
             onClick={onHistoryClick}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium text-white/40 hover:text-white hover:bg-white/5 transition-all"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium text-[var(--text-2)] hover:text-[var(--text-1)] hover:bg-[var(--accent-dim)] transition-all"
             aria-label="Recent Activity"
           >
             <Clock size={15} />
             <span className="hidden sm:inline text-xs font-medium">History</span>
           </button>
 
-          <div className="w-px h-4 bg-white/10 mx-0.5 hidden sm:block" />
+          <div className="w-px h-4 bg-[var(--border)] mx-0.5 hidden sm:block" />
 
           <button
             onClick={toggleDark}
-            className="p-2 rounded-lg text-white/40 hover:text-white hover:bg-white/5 transition-all"
+            className="p-2 rounded-lg text-[var(--text-2)] hover:text-[var(--text-1)] hover:bg-[var(--accent-dim)] transition-all"
             aria-label="Toggle theme"
           >
             {isDark ? <Sun size={16} /> : <Moon size={16} />}
@@ -191,7 +189,7 @@ export default function Header({
 
           <button
             onClick={() => setMobileOpen(p => !p)}
-            className="md:hidden p-2 rounded-lg text-white/40 hover:text-white hover:bg-white/5 transition-all"
+            className="md:hidden p-2 rounded-lg text-[var(--text-2)] hover:text-[var(--text-1)] hover:bg-[var(--accent-dim)] transition-all"
           >
             {mobileOpen ? <X size={18} /> : <Menu size={18} />}
           </button>
@@ -210,16 +208,16 @@ export default function Header({
                   <button
                     key={item.label}
                     onClick={() => handleNavItem(item.href)}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 transition-all text-left"
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[var(--accent-dim)] transition-all text-left"
                   >
                     <span className="text-white/30">{item.icon}</span>
                     <div>
-                      <p className="text-sm font-semibold text-white/70">{item.label}</p>
+                      <p className="text-sm font-semibold text-[var(--text-1)] opacity-70">{item.label}</p>
                       <p className="text-xs" style={{ color: 'var(--text-3)' }}>{item.desc}</p>
                     </div>
                     {item.badge && (
                       <span className="ml-auto label-mono px-1.5 py-0.5 rounded text-[9px]"
-                        style={{ background: 'var(--accent-dim)', color: '#a78bfa' }}>
+                        style={{ background: 'var(--accent-dim)', color: 'var(--accent)', border: '1px solid var(--border)' }}>
                         {item.badge}
                       </span>
                     )}

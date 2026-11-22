@@ -397,6 +397,7 @@ ${html}</body></html>`
       {/* Drop zone */}
       {files.length === 0 ? (
         <div
+          data-file-dropzone="true"
           onDragOver={e => { e.preventDefault(); setDragging(true) }}
           onDragLeave={() => setDragging(false)}
           onDrop={onDrop}

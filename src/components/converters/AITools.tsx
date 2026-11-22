@@ -75,24 +75,36 @@ async function callAI(prompt: string, onChunk: (text: string) => void): Promise<
   const reader = res.body?.getReader()
   if (!reader) throw new Error('No response stream received')
   const decoder = new TextDecoder()
+  let buffer = ''
 
-  while (true) {
-    const { done, value } = await reader.read()
-    if (done) break
-    const chunk = decoder.decode(value, { stream: true })
-    for (const line of chunk.split('\n')) {
-      if (line.startsWith('data: ')) {
-        const data = line.slice(6).trim()
-        if (!data || data === '[DONE]') continue
-        try {
-          const parsed = JSON.parse(data)
-          const text = parsed?.text
-          if (text) onChunk(text)
-        } catch {
-          // skip malformed lines
-        }
+  const processLine = (line: string) => {
+    if (!line.startsWith('data:')) return
+    const data = line.slice(5).trim()
+    if (!data || data === '[DONE]') return
+    try {
+      const parsed = JSON.parse(data) as { text?: unknown }
+      if (typeof parsed.text === 'string' && parsed.text) onChunk(parsed.text)
+    } catch {
+      // Ignore malformed or non-text server-sent events.
+    }
+  }
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      buffer += decoder.decode(value, { stream: true })
+      let lineBreak = buffer.indexOf('\n')
+      while (lineBreak !== -1) {
+        processLine(buffer.slice(0, lineBreak).replace(/\r$/, ''))
+        buffer = buffer.slice(lineBreak + 1)
+        lineBreak = buffer.indexOf('\n')
       }
     }
+    buffer += decoder.decode()
+    if (buffer.trim()) processLine(buffer)
+  } finally {
+    reader.releaseLock()
   }
 }
 
@@ -259,6 +271,7 @@ export default function AITools() {
           onKeyDown={handleKeyDown}
           placeholder={`Paste your text here for "${currentMode.label}"…`}
           rows={4}
+          maxLength={11000}
           className="w-full px-4 pt-4 pb-2 bg-transparent text-sm text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-600 resize-none focus:outline-none"
         />
         <div className="flex items-center justify-between px-3 py-2 border-t border-gray-100 dark:border-gray-800">
@@ -279,7 +292,7 @@ export default function AITools() {
                 </button>
               </>
             )}
-            <span className="text-xs text-gray-300 dark:text-gray-700">Ctrl+Enter to run</span>
+            <span className="text-xs text-gray-400 dark:text-gray-500">{input.length.toLocaleString()} / 11,000 · Ctrl+Enter to run</span>
           </div>
           <button
             onClick={run}
@@ -296,8 +309,8 @@ export default function AITools() {
         </div>
       </div>
 
-      <p className="text-center text-xs text-gray-400 dark:text-gray-600">
-        Powered by NVIDIA NIM · Llama 3.1 · Fast and private
+      <p className="text-center text-xs text-gray-400 dark:text-gray-500">
+        Powered by NVIDIA NIM · Llama 3.1. Text you submit is sent to the AI provider for processing; avoid confidential information.
       </p>
     </div>
   )

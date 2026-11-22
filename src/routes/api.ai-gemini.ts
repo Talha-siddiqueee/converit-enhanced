@@ -1,90 +1,50 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { proxyTextStream, readPromptRequest } from '../server/aiRequest'
 
 export const Route = createFileRoute('/api/ai-gemini')({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        const body = await readPromptRequest(request)
+        if ('response' in body) return body.response
+
+        const apiKey = process.env.GEMINI_API_KEY
+        if (!apiKey) {
+          return Response.json({ error: 'Gemini is not configured on the server.' }, { status: 503 })
+        }
+
         try {
-          const { prompt } = await request.json() as { prompt: string }
+          const providerUrl = new URL('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent')
+          providerUrl.searchParams.set('key', apiKey)
+          providerUrl.searchParams.set('alt', 'sse')
 
-          if (!prompt || typeof prompt !== 'string') {
-            return Response.json({ error: 'Missing or invalid prompt' }, { status: 400 })
-          }
-
-          const apiKey = process.env.GEMINI_API_KEY || (import.meta as any).env?.VITE_GEMINI_API_KEY
-          if (!apiKey) {
-            return Response.json({ error: 'Gemini API key not configured' }, { status: 500 })
-          }
-
-          // Call Gemini API with streaming
-          const geminiRes = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent?key=${apiKey}&alt=sse`,
-            {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: {
-                  temperature: 0.7,
-                  maxOutputTokens: 2048,
-                },
-              }),
-            }
-          )
-
-          if (!geminiRes.ok) {
-            const errText = await geminiRes.text()
-            console.error('Gemini API error:', errText)
-            return Response.json({ error: `Gemini API error: ${geminiRes.status}` }, { status: geminiRes.status })
-          }
-
-          // Stream back to the client as SSE
-          const encoder = new TextEncoder()
-          const stream = new ReadableStream({
-            async start(controller) {
-              const reader = geminiRes.body!.getReader()
-              const decoder = new TextDecoder()
-
-              try {
-                while (true) {
-                  const { done, value } = await reader.read()
-                  if (done) break
-
-                  const chunk = decoder.decode(value, { stream: true })
-                  // Parse each SSE data line from Gemini
-                  for (const line of chunk.split('\n')) {
-                    if (line.startsWith('data: ')) {
-                      const data = line.slice(6).trim()
-                      if (data === '[DONE]' || !data) continue
-                      try {
-                        const parsed = JSON.parse(data)
-                        const text = parsed?.candidates?.[0]?.content?.parts?.[0]?.text
-                        if (text) {
-                          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text })}\n\n`))
-                        }
-                      } catch {
-                        // skip malformed JSON lines
-                      }
-                    }
-                  }
-                }
-              } finally {
-                controller.enqueue(encoder.encode('data: [DONE]\n\n'))
-                controller.close()
-              }
-            },
+          const providerResponse = await fetch(providerUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            signal: request.signal,
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: body.prompt }] }],
+              generationConfig: { temperature: 0.7, maxOutputTokens: 2048 },
+            }),
           })
 
-          return new Response(stream, {
-            headers: {
-              'Content-Type': 'text/event-stream',
-              'Cache-Control': 'no-cache',
-              'Connection': 'keep-alive',
-            },
+          if (!providerResponse.ok) {
+            console.error('Gemini AI provider returned status:', providerResponse.status)
+            return Response.json({ error: 'The AI provider could not complete this request. Please try again.' }, { status: 502 })
+          }
+
+          return proxyTextStream(providerResponse, (payload) => {
+            if (!payload || typeof payload !== 'object') return null
+            const candidates = (payload as { candidates?: Array<{ content?: { parts?: Array<{ text?: unknown }> } }> }).candidates
+            const text = candidates?.[0]?.content?.parts?.[0]?.text
+            return typeof text === 'string' ? text : null
           })
-        } catch (err: any) {
-          console.error('AI route error:', err)
-          return Response.json({ error: err.message || 'Internal server error' }, { status: 500 })
+        } catch (error) {
+          if (request.signal.aborted) {
+            return new Response(null, { status: 499 })
+          }
+          console.error('Gemini AI request failed:', error instanceof Error ? error.message : 'Unknown error')
+          return Response.json({ error: 'Unable to reach the AI provider. Please try again.' }, { status: 502 })
         }
       },
     },

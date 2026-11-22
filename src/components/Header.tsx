@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Link } from '@tanstack/react-router'
 import { Moon, Sun, ChevronDown, FileText, Image as ImageIcon, Type, Ruler, Hash, DollarSign, Palette, Calculator, Menu, X, Code, QrCode, Clock, Film, Sparkles } from 'lucide-react'
 
 function ConvertItLogo() {
@@ -43,8 +44,8 @@ const NAV_GROUPS = [
     items: [
       { label: 'Unit Converter',    icon: <Ruler size={14}/>,      href: 'unit',       desc: 'Length, weight, temp' },
       { label: 'Number Converter',  icon: <Hash size={14}/>,       href: 'number',     desc: 'Binary, hex, octal' },
-      { label: 'Currency Converter',icon: <DollarSign size={14}/>, href: 'currency',   desc: 'Live exchange rates' },
-      { label: 'Calculator',        icon: <Calculator size={14}/>, href: 'calculator', desc: 'Scientific calculator' },
+      { label: 'Currency Converter',icon: <DollarSign size={14}/>, href: 'currency',   desc: 'Latest available exchange rates' },
+      { label: 'Calculator',        icon: <Calculator size={14}/>, href: 'calculator', desc: 'Everyday arithmetic' },
     ]
   },
 ]
@@ -67,27 +68,40 @@ export default function Header({
   }, [])
 
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+    const handlePointerDown = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setOpenGroup(null)
       }
     }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setOpenGroup(null)
+        setMobileOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handlePointerDown)
+    document.addEventListener('keydown', handleEscape)
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown)
+      document.removeEventListener('keydown', handleEscape)
+    }
   }, [])
 
   const toggleDark = () => {
     const next = !isDark
     setIsDark(next)
     document.documentElement.classList.toggle('dark', next)
-    localStorage.setItem('theme', next ? 'dark' : 'light')
+    try {
+      localStorage.setItem('theme', next ? 'dark' : 'light')
+    } catch {
+      // Theme still changes for this session when storage is unavailable.
+    }
   }
 
   const handleNavItem = (key: string) => {
     onNavClick?.(key)
     setOpenGroup(null)
     setMobileOpen(false)
-    setTimeout(() => document.getElementById('converters')?.scrollIntoView({ behavior: 'smooth' }), 50)
   }
 
   return (
@@ -95,7 +109,7 @@ export default function Header({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between gap-4">
 
         {/* Logo */}
-        <a href="/" className="flex items-center gap-2.5 flex-shrink-0 group">
+        <Link to="/" className="flex items-center gap-2.5 flex-shrink-0 group">
           <ConvertItLogo />
           <span className="text-base font-black tracking-tight text-[var(--text-1)]">
             ConvertIt
@@ -104,14 +118,16 @@ export default function Header({
             style={{ background: 'var(--accent-dim)', color: 'var(--accent)', border: '1px solid var(--border)' }}>
             BETA
           </span>
-        </a>
+        </Link>
 
         {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-0.5" ref={dropdownRef}>
           {NAV_GROUPS.map(group => (
             <div key={group.group} className="relative">
               <button
+                type="button"
                 onClick={() => setOpenGroup(prev => prev === group.group ? null : group.group)}
+                aria-expanded={openGroup === group.group}
                 className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                   openGroup === group.group
                     ? 'text-[var(--text-1)] bg-[var(--accent-dim)]'
@@ -131,16 +147,17 @@ export default function Header({
                     <p className="label-mono px-3 py-2">{group.group}</p>
                     {group.items.map(item => (
                       <button
+                        type="button"
                         key={item.label}
                         onClick={() => handleNavItem(item.href)}
                         className="w-full flex items-start gap-2.5 px-3 py-2.5 rounded-lg transition-all group text-left hover:bg-[var(--accent-dim)]"
                       >
-                        <span className="mt-0.5 text-white/30 group-hover:text-violet-400 transition-colors flex-shrink-0">
+                        <span className="mt-0.5 transition-colors flex-shrink-0" style={{ color: 'var(--text-3)' }}>
                           {item.icon}
                         </span>
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="text-sm font-semibold text-[var(--text-1)] opacity-70 group-hover:text-[var(--text-1)] transition-colors">
+                            <span className="text-sm font-semibold text-[var(--text-1)] group-hover:text-[var(--accent)] transition-colors">
                               {item.label}
                             </span>
                             {item.badge && (
@@ -165,10 +182,11 @@ export default function Header({
         <div className="flex items-center gap-2">
           <div className="hidden sm:flex items-center gap-1.5 mr-1">
             <span className="accent-dot" />
-            <span className="label-mono text-violet-400">Free & Private</span>
+            <span className="label-mono" style={{ color: 'var(--accent)' }}>Local-first</span>
           </div>
 
           <button
+            type="button"
             onClick={onHistoryClick}
             className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium text-[var(--text-2)] hover:text-[var(--text-1)] hover:bg-[var(--accent-dim)] transition-all"
             aria-label="Recent Activity"
@@ -180,15 +198,21 @@ export default function Header({
           <div className="w-px h-4 bg-[var(--border)] mx-0.5 hidden sm:block" />
 
           <button
+            type="button"
             onClick={toggleDark}
             className="p-2 rounded-lg text-[var(--text-2)] hover:text-[var(--text-1)] hover:bg-[var(--accent-dim)] transition-all"
-            aria-label="Toggle theme"
+            aria-label={isDark ? "Switch to light theme" : "Switch to dark theme"}
+            aria-pressed={isDark}
+            title={isDark ? "Switch to light theme" : "Switch to dark theme"}
           >
             {isDark ? <Sun size={16} /> : <Moon size={16} />}
           </button>
 
           <button
+            type="button"
             onClick={() => setMobileOpen(p => !p)}
+            aria-label={mobileOpen ? "Close navigation menu" : "Open navigation menu"}
+            aria-expanded={mobileOpen}
             className="md:hidden p-2 rounded-lg text-[var(--text-2)] hover:text-[var(--text-1)] hover:bg-[var(--accent-dim)] transition-all"
           >
             {mobileOpen ? <X size={18} /> : <Menu size={18} />}
@@ -206,13 +230,14 @@ export default function Header({
               <div className="space-y-1">
                 {group.items.map(item => (
                   <button
+                    type="button"
                     key={item.label}
                     onClick={() => handleNavItem(item.href)}
                     className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[var(--accent-dim)] transition-all text-left"
                   >
-                    <span className="text-white/30">{item.icon}</span>
+                    <span style={{ color: 'var(--text-3)' }}>{item.icon}</span>
                     <div>
-                      <p className="text-sm font-semibold text-[var(--text-1)] opacity-70">{item.label}</p>
+                      <p className="text-sm font-semibold text-[var(--text-1)]">{item.label}</p>
                       <p className="text-xs" style={{ color: 'var(--text-3)' }}>{item.desc}</p>
                     </div>
                     {item.badge && (

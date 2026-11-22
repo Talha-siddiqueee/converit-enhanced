@@ -20,7 +20,7 @@ export const CATEGORIES: Category[] = [
   {
     key: 'ai',
     label: 'AI Text Tools',
-    description: 'Rewrite, summarize & brainstorm with Gemini AI',
+    description: 'Rewrite, summarize & brainstorm with NVIDIA AI',
     icon: <Sparkles size={26} />,
     examples: ['Rewrite Professionally', 'Summarize', 'Brainstorm', 'Fix Grammar'],
     gradient: 'from-violet-600 to-indigo-600',
@@ -104,9 +104,9 @@ export const CATEGORIES: Category[] = [
   {
     key: 'currency',
     label: 'Currency Converter',
-    description: 'Live exchange rates for 150+ currencies',
+    description: 'Convert with the latest available rates for 150+ currencies',
     icon: <DollarSign size={26} />,
-    examples: ['USD → EUR', 'GBP → JPY', 'Live rates', '150+ currencies'],
+    examples: ['USD → EUR', 'GBP → JPY', 'Rate refresh', '150+ currencies'],
     gradient: 'from-yellow-500 to-lime-500',
     iconBg: 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-600 dark:text-yellow-500',
   },
@@ -122,7 +122,7 @@ export const CATEGORIES: Category[] = [
   {
     key: 'calculator',
     label: 'Calculator',
-    description: 'Full-featured scientific calculator',
+    description: 'A quick calculator for everyday arithmetic',
     icon: <CalculatorIcon size={26} />,
     examples: ['Add / Subtract', 'Multiply / Divide', 'Percentage', 'Toggle sign'],
     gradient: 'from-slate-500 to-gray-600',

@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import { Zap } from 'lucide-react'
 import Header from '../components/Header'
 import RecentActivity from '../components/RecentActivity'
-import { CategoryKey } from '../config/tools'
+import type { CategoryKey } from '../config/tools'
 import '../styles.css'
 
 export const Route = createRootRoute({
@@ -11,9 +11,14 @@ export const Route = createRootRoute({
     meta: [
       { charSet: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { title: 'ConvertIt – Convert Anything, Instantly' },
-      { name: 'description', content: 'Free online file and data converter. Convert images, documents, text, units, numbers, currencies, and colors.' },
+      { title: 'ConvertIt — Browser-first file & data tools' },
+      { name: 'description', content: 'A browser-first workspace for converting images, documents, audio, text, code, units, numbers, currencies and colors.' },
+      { name: 'theme-color', content: '#080808' },
+      { property: 'og:title', content: 'ConvertIt — Browser-first file & data tools' },
+      { property: 'og:description', content: 'Convert common files and data formats in one browser-first workspace. Local tools keep files in your browser; AI and rate lookups use external providers.' },
+      { property: 'og:type', content: 'website' },
     ],
+    links: [{ rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }],
   }),
   component: AppLayout,
   shellComponent: RootDocument,
@@ -25,7 +30,14 @@ function AppLayout() {
   const navigate = useNavigate()
 
   useEffect(() => {
+    const isOverLocalDropzone = (target: EventTarget | null) =>
+      target instanceof Element && Boolean(target.closest('[data-file-dropzone], input[type="file"]'))
+
     const handleDragOver = (e: DragEvent) => {
+      if (isOverLocalDropzone(e.target)) {
+        setIsDraggingGlobal(false)
+        return
+      }
       e.preventDefault()
       if (e.dataTransfer?.types.includes('Files')) setIsDraggingGlobal(true)
     }
@@ -34,16 +46,25 @@ function AppLayout() {
       if (e.target === document.documentElement) setIsDraggingGlobal(false)
     }
     const handleDrop = (e: DragEvent) => {
-      e.preventDefault()
       setIsDraggingGlobal(false)
+      // Let a converter's own drop handler receive files dropped into its upload area.
+      if (isOverLocalDropzone(e.target)) return
+
+      e.preventDefault()
       const file = e.dataTransfer?.files[0]
       if (!file) return
 
+      const extension = file.name.toLowerCase().match(/\.[^.]+$/)?.[0] ?? ''
+      const imageExtensions = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp', '.avif', '.tif', '.tiff'])
+      const documentExtensions = new Set(['.docx', '.pdf', '.xlsx', '.xls', '.csv', '.html', '.htm'])
+      const textExtensions = new Set(['.txt', '.md', '.json', '.xml', '.yaml', '.yml', '.log'])
+      const mediaExtensions = new Set(['.mp3', '.wav', '.ogg', '.flac', '.m4a', '.aac', '.mp4', '.webm', '.avi', '.mkv', '.mov'])
+
       let target: CategoryKey | null = null
-      if (file.type.startsWith('image/')) target = 'image'
-      else if (file.name.endsWith('.docx') || file.name.endsWith('.pdf') || file.name.endsWith('.xlsx') || file.name.endsWith('.csv') || file.name.endsWith('.html')) target = 'document'
-      else if (file.name.endsWith('.json') || file.name.endsWith('.md') || file.type.startsWith('text/')) target = 'text'
-      else if (file.type.startsWith('audio/') || file.type.startsWith('video/')) target = 'media'
+      if (file.type.startsWith('image/') || imageExtensions.has(extension)) target = 'image'
+      else if (documentExtensions.has(extension)) target = 'document'
+      else if (file.type.startsWith('audio/') || file.type.startsWith('video/') || mediaExtensions.has(extension)) target = 'media'
+      else if (file.type.startsWith('text/') || textExtensions.has(extension)) target = 'text'
 
       if (target) {
         navigate({ to: '/tools/$toolId', params: { toolId: target } })
@@ -76,8 +97,8 @@ function AppLayout() {
               style={{ background: 'var(--accent-dim)', border: '1px solid rgba(124,58,237,0.3)' }}>
               <Zap size={28} className="text-violet-400" />
             </div>
-            <h2 className="text-xl font-black text-white tracking-tight">Drop it anywhere</h2>
-            <p className="text-sm mt-1.5" style={{ color: 'var(--text-2)' }}>We'll open the right converter automatically</p>
+            <h2 className="text-xl font-black text-white tracking-tight">Find the right tool</h2>
+            <p className="text-sm mt-1.5 max-w-sm" style={{ color: 'var(--text-2)' }}>We'll open a matching converter. Select the file there to start processing.</p>
           </div>
         </div>
       )}
@@ -89,12 +110,12 @@ function AppLayout() {
       <footer className="mt-20 py-12 border-t" style={{ borderColor: 'var(--border)', background: 'var(--bg)' }}>
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-black text-white tracking-tight">ConvertIt</span>
+            <span className="text-sm font-black tracking-tight" style={{ color: 'var(--text-1)' }}>ConvertIt</span>
             <span className="label-mono px-1.5 py-0.5 rounded text-[9px]"
-              style={{ background: 'var(--accent-dim)', color: '#a78bfa', border: '1px solid rgba(124,58,237,0.2)' }}>BETA</span>
+              style={{ background: 'var(--accent-dim)', color: 'var(--accent)', border: '1px solid var(--border)' }}>BETA</span>
           </div>
           <p className="text-xs" style={{ color: 'var(--text-3)' }}>
-            All conversions run in your browser · Zero uploads · 100% private
+            Local file tools stay in your browser · AI prompts and rate lookups use external providers
           </p>
           <p className="label-mono" style={{ color: 'var(--text-3)' }}>
             FFmpeg · pdf-lib · NVIDIA NIM

@@ -10,18 +10,18 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ToolsToolIdRouteImport } from './routes/tools.$toolId'
-import { Route as ApiAiNvidiaRouteImport } from './routes/api.ai-nvidia'
 import { Route as ApiAiGeminiRouteImport } from './routes/api.ai-gemini'
+import { Route as ApiAiNvidiaRouteImport } from './routes/api.ai-nvidia'
+import { Route as ToolsToolIdRouteImport } from './routes/tools.$toolId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ToolsToolIdRoute = ToolsToolIdRouteImport.update({
-  id: '/tools/$toolId',
-  path: '/tools/$toolId',
+const ApiAiGeminiRoute = ApiAiGeminiRouteImport.update({
+  id: '/api/ai-gemini',
+  path: '/api/ai-gemini',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAiNvidiaRoute = ApiAiNvidiaRouteImport.update({
@@ -29,9 +29,9 @@ const ApiAiNvidiaRoute = ApiAiNvidiaRouteImport.update({
   path: '/api/ai-nvidia',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiAiGeminiRoute = ApiAiGeminiRouteImport.update({
-  id: '/api/ai-gemini',
-  path: '/api/ai-gemini',
+const ToolsToolIdRoute = ToolsToolIdRouteImport.update({
+  id: '/tools/$toolId',
+  path: '/tools/$toolId',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -78,11 +78,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/tools/$toolId': {
-      id: '/tools/$toolId'
-      path: '/tools/$toolId'
-      fullPath: '/tools/$toolId'
-      preLoaderRoute: typeof ToolsToolIdRouteImport
+    '/api/ai-gemini': {
+      id: '/api/ai-gemini'
+      path: '/api/ai-gemini'
+      fullPath: '/api/ai-gemini'
+      preLoaderRoute: typeof ApiAiGeminiRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/ai-nvidia': {
@@ -92,11 +92,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAiNvidiaRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/ai-gemini': {
-      id: '/api/ai-gemini'
-      path: '/api/ai-gemini'
-      fullPath: '/api/ai-gemini'
-      preLoaderRoute: typeof ApiAiGeminiRouteImport
+    '/tools/$toolId': {
+      id: '/tools/$toolId'
+      path: '/tools/$toolId'
+      fullPath: '/tools/$toolId'
+      preLoaderRoute: typeof ToolsToolIdRouteImport
       parentRoute: typeof rootRouteImport
     }
   }

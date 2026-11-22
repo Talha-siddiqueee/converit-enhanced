@@ -1,128 +1,45 @@
-# AGENTS.md
+# ConvertIt Enhanced — Agent Notes
 
-This document provides an overview of the project structure for developers and AI agents working on this codebase.
+## Product overview
 
-## Project Overview
+ConvertIt is a browser-first file and data conversion workspace. It contains 12 tool categories: image, document, text, code, QR, unit, number, currency, colour, calculator, media and AI text tools.
 
-An interactive resume/portfolio application with an AI-powered assistant. Built with TanStack Start and deployed on Netlify.
+## Stack
 
-### Tech Stack
+- React 19 + TypeScript (strict mode)
+- TanStack Start + TanStack Router file-based routes
+- Vite 7
+- Tailwind CSS 4 + custom CSS design tokens
+- Lucide React
+- Netlify TanStack Start Vite plugin
 
-| Layer | Technology |
-|-------|------------|
-| Framework | TanStack Start |
-| Frontend | React 19, TanStack Router v1 |
-| Build | Vite 7 |
-| Styling | Tailwind CSS 4 |
-| UI Components | Radix UI + custom components |
-| Content | Content Collections (type-safe markdown) |
-| AI | TanStack AI with multi-provider support |
-| Language | TypeScript 5.7 (strict mode) |
-| Deployment | Netlify |
+## Source layout
 
-## Directory Structure
+- `src/routes/index.tsx`: homepage, tool search and category catalogue.
+- `src/routes/tools.$toolId.tsx`: lazy-loaded tool pages.
+- `src/routes/__root.tsx`: shared application shell, metadata, history panel and drag-and-drop routing.
+- `src/routes/api.ai-nvidia.ts` and `src/routes/api.ai-gemini.ts`: server-only AI provider routes.
+- `src/server/aiRequest.ts`: bounded JSON prompt validation and server-sent-event stream proxy.
+- `src/components/converters/`: converter feature components.
+- `src/config/tools.tsx`: the shared category catalogue.
+- `src/styles.css`: global theme tokens, motion and accessibility styles.
 
-```
-├── public
-│   ├── favicon.ico
-│   ├── tanstack-circle-logo.png
-│   └── tanstack-word-logo-white.svg  # TanStack wordmark logo (white) used in header/nav.
-├── src
-│   ├── components
-│   │   ├── Calculator.tsx  # iOS-style calculator: digits, operations, evaluate, clear, percent.
-│   │   ├── Header.tsx  # Header component.
-│   │   └── HeaderNav.tsx  # Navigation sidebar template: mobile menu, Home link, add-on routes; EJS-driven for dynamic route generation.
-│   ├── routes
-│   │   ├── __root.tsx  # Root layout: HTML shell, styles.
-│   │   └── index.tsx  # Home route: renders Calculator component.
-│   ├── router.tsx  # TanStack Router setup: creates router from generated routeTree with scroll restoration.
-│   └── styles.css  # Global styles: Tailwind import plus base body/code font styling.
-├── .gitignore  # Template for .gitignore: node_modules, dist, .env, .netlify, .tanstack, etc.
-├── AGENTS.md  # This document provides an overview of the project structure for developers and AI agents working on this codebase.
-├── netlify.toml  # Netlify deployment config: build command (vite build), publish directory (dist/client), and dev server settings (port 8888, target 3000).
-├── package.json  # Project manifest with TanStack Start, React 19, Vite 7, Tailwind CSS 4, and Netlify plugin dependencies; defines dev and build scripts.
-├── pnpm-lock.yaml
-├── tsconfig.json  # TypeScript config: ES2022 target, strict mode, @/* path alias for src/*, bundler module resolution.
-└── vite.config.ts  # Vite config template: TanStack Start, React, Tailwind, Netlify plugin, and optional add-on integrations; processed by EJS.
-```
-
-## Key Concepts
-
-### File-Based Routing (TanStack Router)
-
-Routes are defined by files in `src/routes/`:
-
-- `__root.tsx` - Root layout wrapping all pages
-- `index.tsx` - Route for `/`
-- `api.*.ts` - Server API endpoints (e.g., `api.resume-chat.ts` → `/api/resume-chat`)
-
-### Component Architecture
-
-**UI Primitives** (`src/components/ui/`):
-- Radix UI-based, Tailwind-styled
-- Card, Badge, Checkbox, Separator, HoverCard
-
-**Feature Components** (`src/components/`):
-- Header, HeaderNav, ResumeAssistant
-
-## Configuration Files
-
-| File | Purpose |
-|------|---------|
-| `vite.config.ts` | Vite plugins: TanStack Start, Netlify, Tailwind, Content Collections |
-| `tsconfig.json` | TypeScript config with `@/*` path alias for `src/*` |
-| `netlify.toml` | Build command, output directory, dev server settings |
-| `content-collections.ts` | Zod schemas for jobs and education frontmatter |
-| `styles.css` | Tailwind imports + CSS custom properties (oklch colors) |
-
-## Development Commands
+## Development commands
 
 ```bash
-npm run dev      # Start dev server
-npm run build    # Production build
-npm run preview  # Preview production build
+npm ci
+npm run dev
+npm run typecheck
+npm run build
+npm run preview
 ```
 
-## Conventions
+## Important implementation constraints
 
-### Naming
-- Components: PascalCase
-- Utilities/hooks: camelCase
-- Routes: kebab-case files
-
-### Styling
-- Tailwind CSS utility classes
-- `cn()` helper for conditional class merging
-- CSS variables for theme tokens in `styles.css`
-
-### TypeScript
-- Strict mode enabled
-- Import paths use `@/` alias
-- Zod for runtime validation
-- Type-only imports with `type` keyword
-
-### State Management
-- React hooks for local state
-- Zustand if you need it for global state
-### Calculator Component
-
-iOS-style calculator built with React `useReducer` for state management.
-
-**State pattern:** `display`, `previousValue`, `operation`, `overwrite`
-
-**Actions:** ADD_DIGIT, CHOOSE_OPERATION, EVALUATE, CLEAR, DELETE_DIGIT, PERCENT, TOGGLE_SIGN
-
-No special dependencies beyond base TanStack Start. Pure React + Tailwind CSS.
-
-## Application Name
-
-This starter uses "Application Name" as a placeholder throughout the UI and metadata. Replace it with the user's desired application name in the following locations:
-
-### UI Components
-- `src/components/Header.tsx` — app name displayed in the header
-- `src/components/HeaderNav.tsx` — app name in the mobile navigation header
-
-### SEO Metadata
-- `src/routes/__root.tsx` — the `title` field in the `head()` configuration
-
-Search for all occurrences of "Application Name" in the `src/` directory and replace with the user's application name.
+1. **Never expose secrets in browser code.** Provider keys must be read from server-side `process.env` only. Never introduce `VITE_*_API_KEY` or other `VITE_*` secrets.
+2. **Be accurate about data flow.** File/media conversions are browser-local where implemented. AI prompts go to the configured provider. Currency rates are fetched from an external service. Do not claim that every feature is fully offline or that no data ever leaves the browser.
+3. **Preserve cross-origin isolation headers.** `Cross-Origin-Opener-Policy` and `Cross-Origin-Embedder-Policy` are needed by the current FFmpeg WebAssembly implementation.
+4. **Use the Netlify Start adapter.** The project uses `@netlify/vite-plugin-tanstack-start` and `dist/client`. Do not switch the app to a static-only server preset while server API routes are part of the product.
+5. **Keep converter components lazy-loaded** from `src/routes/tools.$toolId.tsx` to avoid shipping every heavy dependency on the initial page.
+6. **Respect reduced-motion preferences** and maintain visible keyboard focus styles.
+7. Keep tool labels, descriptions and route keys in sync in `src/config/tools.tsx` and the tool component map.

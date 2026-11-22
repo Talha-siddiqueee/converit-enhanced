@@ -413,6 +413,7 @@ export default function MediaConverter() {
           {/* Drop Zone */}
           {!file ? (
             <div
+              data-file-dropzone="true"
               onDragOver={e => e.preventDefault()}
               onDrop={handleDrop}
               onClick={() => inputRef.current?.click()}

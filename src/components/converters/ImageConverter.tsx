@@ -136,6 +136,7 @@ export default function ImageConverter() {
 
       {!file ? (
         <div
+          data-file-dropzone="true"
           onDragOver={e => { e.preventDefault(); setDragging(true) }}
           onDragLeave={() => setDragging(false)}
           onDrop={onDrop}

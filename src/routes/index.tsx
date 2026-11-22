@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { ArrowRight, Shield, Cpu, Zap, Globe, Sparkles } from 'lucide-react'
-import { CATEGORIES, CategoryKey } from '../config/tools'
+import { useState } from 'react'
+import { ArrowRight, Shield, Cpu, Zap, Sparkles, Search, X } from 'lucide-react'
+import { CATEGORIES } from '../config/tools'
+import type { CategoryKey } from '../config/tools'
 
 export const Route = createFileRoute('/')({
   component: Home,
@@ -11,27 +13,33 @@ const POPULAR: CategoryKey[] = ['ai', 'media', 'document', 'image']
 const FEATURES = [
   {
     icon: <Shield size={20} className="text-violet-400" />,
-    title: 'Zero Upload Policy',
-    desc: 'Every conversion runs inside your browser. Files never touch a server.',
+    title: 'Local-first processing',
+    desc: 'Image, document, text and media files are processed in your browser instead of being uploaded to our app server.',
   },
   {
     icon: <Zap size={20} className="text-violet-400" />,
-    title: 'Instant Results',
-    desc: 'WebAssembly and native browser APIs mean millisecond processing.',
+    title: 'Built for speed',
+    desc: 'Browser-native APIs and WebAssembly handle demanding conversions without a round trip to our servers.',
   },
   {
     icon: <Cpu size={20} className="text-violet-400" />,
-    title: 'AI-Powered',
-    desc: 'Groq Llama 3 powers rewriting, summarizing, translation and more.',
+    title: 'AI when you need it',
+    desc: 'AI text requests are sent to NVIDIA NIM through a server endpoint. Provider keys stay on the server.',
   },
   {
-    icon: <Globe size={20} className="text-violet-400" />,
-    title: 'Works Offline',
-    desc: 'No internet needed after first load. Open tabs, convert freely.',
+    icon: <Sparkles size={20} className="text-violet-400" />,
+    title: 'No account required',
+    desc: 'Use the local conversion tools without creating an account. AI and exchange-rate features need an internet connection.',
   },
 ]
 
 function Home() {
+  const [toolQuery, setToolQuery] = useState('')
+  const normalizedQuery = toolQuery.trim().toLowerCase()
+  const filteredCategories = CATEGORIES.filter((category) =>
+    [category.label, category.description, ...category.examples].join(' ').toLowerCase().includes(normalizedQuery),
+  )
+
   return (
     <div className="relative">
 
@@ -51,7 +59,7 @@ function Home() {
         <div className="animate-fade-in-up relative z-10 flex items-center gap-2 mb-8">
           <span className="label-mono flex items-center gap-2 px-3 py-1.5 rounded-md border border-[var(--border)] bg-[var(--bg-card)]">
             <span className="accent-dot" />
-            Free · Private · No account required
+            Local-first · No account required
           </span>
         </div>
 
@@ -69,8 +77,8 @@ function Home() {
 
           <p className="animate-fade-in-up stagger-5 text-lg leading-relaxed max-w-xl mx-auto mb-12"
             style={{ color: 'var(--text-2)' }}>
-            Audio, images, documents, code, units, currencies, colors — all processed in your browser.
-            No uploads. No accounts. Complete privacy.
+            Audio, images, documents, code, units, currencies and colors in one browser-first workspace.
+            Files stay local for most tools; AI prompts and exchange-rate requests connect to their providers.
           </p>
 
           {/* CTAs */}
@@ -97,10 +105,10 @@ function Home() {
           {/* Stats row */}
           <div className="animate-fade-in-up stagger-7 flex flex-wrap items-center justify-center gap-8 text-sm">
             {[
-              ['12+', 'Tools'],
-              ['0', 'Server uploads'],
-              ['100%', 'Free forever'],
-              ['AI', 'Powered'],
+              [String(CATEGORIES.length), 'Tools'],
+              ['Local-first', 'File processing'],
+              ['No sign-up', 'Required'],
+              ['AI', 'Optional'],
             ].map(([num, label]) => (
               <div key={label} className="text-center">
                 <div className="text-2xl font-black text-[var(--text-1)]">{num}</div>
@@ -140,19 +148,44 @@ function Home() {
       <section id="converters" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 scroll-mt-20">
 
         {/* Section header */}
-        <div className="animate-fade-in flex items-end justify-between mb-10">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between mb-8">
           <div>
             <p className="label-mono mb-2">All Tools</p>
             <h2 className="text-3xl font-black text-[var(--text-1)] tracking-tight">Choose a Tool</h2>
+            <p className="text-sm mt-2" style={{ color: 'var(--text-2)' }}>Find the right utility for the job.</p>
           </div>
-          <span className="label-mono px-3 py-1.5 rounded-md border"
-            style={{ borderColor: 'var(--border)', background: 'var(--bg-card)' }}>
-            {CATEGORIES.length} available
-          </span>
+          <div className="w-full sm:w-80">
+            <label htmlFor="tool-search" className="sr-only">Search conversion tools</label>
+            <div className="relative">
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-3)' }} />
+              <input
+                id="tool-search"
+                type="search"
+                value={toolQuery}
+                onChange={(event) => setToolQuery(event.target.value)}
+                placeholder="Search tools or formats…"
+                className="w-full rounded-xl border py-3 pl-10 pr-10 text-sm outline-none transition focus:ring-2 focus:ring-violet-500/30"
+                style={{ color: 'var(--text-1)', background: 'var(--bg-card)', borderColor: 'var(--border)' }}
+              />
+              {toolQuery && (
+                <button
+                  type="button"
+                  onClick={() => setToolQuery('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 transition hover:bg-[var(--accent-dim)]"
+                  style={{ color: 'var(--text-3)' }}
+                  aria-label="Clear tool search"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+            <p className="label-mono mt-2 text-right">{filteredCategories.length} of {CATEGORIES.length} tools</p>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-          {CATEGORIES.map((cat, i) => (
+        {filteredCategories.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+          {filteredCategories.map((cat, i) => (
             <Link
               key={cat.key}
               to="/tools/$toolId"
@@ -195,7 +228,15 @@ function Home() {
               </div>
             </Link>
           ))}
-        </div>
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-dashed p-10 text-center" style={{ borderColor: 'var(--border)', background: 'var(--bg-card)' }}>
+            <Search size={24} className="mx-auto mb-3" style={{ color: 'var(--text-3)' }} />
+            <h3 className="font-bold text-[var(--text-1)]">No tools found</h3>
+            <p className="text-sm mt-1 mb-4" style={{ color: 'var(--text-2)' }}>Try a different name, category or file format.</p>
+            <button type="button" onClick={() => setToolQuery('')} className="btn-ghost">Clear search</button>
+          </div>
+        )}
       </section>
 
       {/* ── "Drop anywhere" CTA strip ────────────────────── */}
@@ -206,10 +247,13 @@ function Home() {
           <span className="label-mono text-violet-400">Pro tip</span>
         </div>
         <h2 className="text-2xl font-black text-[var(--text-1)] mb-3 tracking-tight">
-          Drop any file anywhere on the page
+          Drop a supported file anywhere on the page to find its tool
         </h2>
         <p style={{ color: 'var(--text-2)' }} className="text-sm max-w-sm mx-auto">
-          We'll automatically detect the file type and open the right converter for you.
+          We'll detect common image, document, text and media formats and open a matching converter. Select the file in that tool to start processing. If a format is not recognised, choose a tool from the grid above.
+        </p>
+        <p className="text-xs max-w-2xl mx-auto mt-5" style={{ color: 'var(--text-3)' }}>
+          Privacy note: local file tools process files in your browser. AI text requests are sent to NVIDIA NIM, and currency rates are fetched from an external rate provider.
         </p>
       </section>
     </div>

@@ -1,90 +1,54 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { proxyTextStream, readPromptRequest } from '../server/aiRequest'
 
 export const Route = createFileRoute('/api/ai-nvidia')({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        const body = await readPromptRequest(request)
+        if ('response' in body) return body.response
+
+        // Provider credentials must only exist in the server environment.
+        // Never use a VITE_ variable for a secret because Vite exposes it to the browser.
+        const apiKey = process.env.NVIDIA_API_KEY
+        if (!apiKey) {
+          return Response.json({ error: 'AI service is not configured on the server.' }, { status: 503 })
+        }
+
         try {
-          const { prompt, model } = await request.json() as { prompt: string; model?: string }
-
-          if (!prompt || typeof prompt !== 'string') {
-            return Response.json({ error: 'Missing or invalid prompt' }, { status: 400 })
-          }
-
-          const apiKey = process.env.NVIDIA_API_KEY || (import.meta as any).env?.VITE_NVIDIA_API_KEY
-          if (!apiKey) {
-            return Response.json({ error: 'NVIDIA API key not configured' }, { status: 500 })
-          }
-
-          const nvidiaRes = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
+          const providerResponse = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${apiKey}`,
             },
+            signal: request.signal,
             body: JSON.stringify({
-              model: model || 'meta/llama-3.1-8b-instruct',
-              messages: [{ role: 'user', content: prompt }],
+              model: 'nvidia/nemotron-3.5-bolt-e4b',
+              messages: [{ role: 'user', content: body.prompt }],
               temperature: 0.7,
               max_tokens: 2048,
               stream: true,
             }),
           })
 
-          if (!nvidiaRes.ok) {
-            const errText = await nvidiaRes.text()
-            console.error('NVIDIA API error:', errText)
-            return Response.json({ error: `NVIDIA API error: ${nvidiaRes.status}` }, { status: nvidiaRes.status })
+          if (!providerResponse.ok) {
+            console.error('NVIDIA AI provider returned status:', providerResponse.status)
+            return Response.json({ error: 'The AI provider could not complete this request. Please try again.' }, { status: 502 })
           }
 
-          // Stream back to client as SSE
-          const encoder = new TextEncoder()
-          const stream = new ReadableStream({
-            async start(controller) {
-              const reader = nvidiaRes.body!.getReader()
-              const decoder = new TextDecoder()
-
-              try {
-                while (true) {
-                  const { done, value } = await reader.read()
-                  if (done) break
-
-                  const chunk = decoder.decode(value, { stream: true })
-                  for (const line of chunk.split('\n')) {
-                    if (line.startsWith('data: ')) {
-                      const data = line.slice(6).trim()
-                      if (!data || data === '[DONE]') {
-                        continue
-                      }
-                      try {
-                        const parsed = JSON.parse(data)
-                        const text = parsed?.choices?.[0]?.delta?.content
-                        if (text) {
-                          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text })}\n\n`))
-                        }
-                      } catch {
-                        // skip malformed lines
-                      }
-                    }
-                  }
-                }
-              } finally {
-                controller.enqueue(encoder.encode('data: [DONE]\n\n'))
-                controller.close()
-              }
-            },
+          return proxyTextStream(providerResponse, (payload) => {
+            if (!payload || typeof payload !== 'object') return null
+            const choices = (payload as { choices?: Array<{ delta?: { content?: unknown } }> }).choices
+            const content = choices?.[0]?.delta?.content
+            return typeof content === 'string' ? content : null
           })
-
-          return new Response(stream, {
-            headers: {
-              'Content-Type': 'text/event-stream',
-              'Cache-Control': 'no-cache',
-              'Connection': 'keep-alive',
-            },
-          })
-        } catch (err: any) {
-          console.error('NVIDIA AI route error:', err)
-          return Response.json({ error: err.message || 'Internal server error' }, { status: 500 })
+        } catch (error) {
+          if (request.signal.aborted) {
+            return new Response(null, { status: 499 })
+          }
+          console.error('NVIDIA AI request failed:', error instanceof Error ? error.message : 'Unknown error')
+          return Response.json({ error: 'Unable to reach the AI provider. Please try again.' }, { status: 502 })
         }
       },
     },
